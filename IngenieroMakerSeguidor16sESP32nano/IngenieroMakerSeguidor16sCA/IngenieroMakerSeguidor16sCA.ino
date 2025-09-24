@@ -22,23 +22,22 @@
  */
 
 #include <IngenieroMakerSeguidor16sESP32nano.h>
-//#include <IngenieroMakerTB6612.h>
-//CREO EL OBJETO Control
-//CREO EL OBJETO Robot
+#include <ControlMotores.h>
+Motores Motores;
 barra16 Robot;
 //Mapeo de pines
-
 #define LED 48
-//#define GO  10 //10
+#define GO 17    //10
 #define BOTON 7  //12
+
 int p;
 // Constantes para PID
-float KP = .1;     //0.01; /valor maximo teorico de 65535
+float KP = 5000;     //0.01; /valor maximo teorico de 65535
 float KD = 2;      // 1.0;
-float Ki = 0.035;  //.006
-
+float Ki = 0.035;  //.006s
+int velocidadMotores = 40;
 // Regulación de la velocidad Máxima
-int Velmax = 85;  //40 //Maximo 255 nieveles
+int Velmax = 40;  //40 //Maximo 255 nieveles
 
 // Data para intrgal
 int error1 = 0;
@@ -58,17 +57,22 @@ int Target = 750;      // Setpoint (Como utilizamos 16 sensores, la línea debe 
 
 void setup() {
   Serial.begin(9600);
+  delay(10);
+
+  Motores.begin();
+
   // Declaramos como salida los pines utilizados
   pinMode(LED, OUTPUT);
-  //  pinMode(GO, INPUT);
+  pinMode(GO, INPUT);
   pinMode(BOTON, INPUT);
   //CALIBRACION
 
   WaitBoton();
+
   digitalWrite(LED_BUILTIN, HIGH);
   delay(3000);
   Robot.leer_blanco();  //PONER SENSORES EN BLANCO
-
+  Serial.println("Lectura de blanco correctas");
   digitalWrite(LED_BUILTIN, LOW);
 
   WaitBoton();  //PRESIONAR BOTON
@@ -76,42 +80,48 @@ void setup() {
   digitalWrite(LED_BUILTIN, HIGH);
   delay(3000);
   Robot.leer_negro();  //PONER SENSORES EN NEGRO
+  Serial.println("Lectura de negros correcta");
   digitalWrite(LED_BUILTIN, LOW);
-  WaitBoton();  //PRESIONAR BOTON
 
+  WaitBoton();  //PRESIONAR BOTON
 
   digitalWrite(LED_BUILTIN, HIGH);
   Robot.Calcula_muestras();  //CALCULA TABLA DE MUESTRAS
-                             //  GO_Boton();            // CONTROL DE ARRANQUE
+
+  while (!digitalRead(GO)) {
+    Motores.motores(0, 0);
+  };
+
+  // CONTROL DE ARRANQUE
   digitalWrite(LED_BUILTIN, LOW);
 }
 
 void loop() {
+  while (digitalRead(GO)) {
+    Robot.Leer_Sensores_Linea(0);
+    p = Robot.proporcional();
+    pid();  // Calculo pid y control motores
+  }
 
-  Robot.Leer_Sensores_Linea(0);
-  p = Robot.proporcional();
-  // Serial.println(p);
-  pid();  // Calculo pid y control motores
-  //  delay(500);
+  Motores.motores(0, 0);
 }
 
 // BOTON DE ESPERA
 void WaitBoton() {
-  while (digitalRead(BOTON))
-    ;
+  while (digitalRead(BOTON)) {};
 }
 // BOTON DE INICIO
-//void GO_Boton() {
-//  while (!digitalRead(GO));
-//}
+
 void pid() {
   proporcional = p - 750;
   Serial.println(proporcional);
   if (proporcional <= -Target) {
-    //Control.Motorde(0);
+    Motores.motorDer(velocidadMotores);
+    //Motores.motorDer(Velmax);
+
     //    Control.freno(true, false, 255);
   } else if (proporcional >= Target) {
-    //Control.Motoriz(0);
+    Motores.motorIzq(velocidadMotores); //velocidadMotores
     //    Control.freno(false, true, 255);
   }
 
@@ -131,5 +141,5 @@ void pid() {
   if (diferencial > Velmax) diferencial = Velmax;
   else if (diferencial < -Velmax) diferencial = -Velmax;
 
-  //(diferencial < 0) ? Control.Motor(Velmax + diferencial, Velmax) : Control.Motor(Velmax, Velmax - diferencial);
+  (diferencial < 0) ? Motores.motores(Velmax + diferencial, Velmax) : Motores.motores(Velmax, Velmax - diferencial);
 }
