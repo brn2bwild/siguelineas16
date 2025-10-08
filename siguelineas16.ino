@@ -34,13 +34,16 @@ BarraSensores16 barraSensores;
 
 // Constantes para PID
 int p;
-float kp = 0.01;   //0.01;
-float kd = 1.0;    // 1.0;
-float ki = 0.035;  //.006s
+float kp = 0.2;      //0.01;
+float kd = 1.3;    // 1.0;
+float ki = 0.016;  //.006s
 
 // Regulación de la velocidad Máxima
-int velocidad_maxima = 50;  //40 //Maximo 255 nieveles
-int velocidad_freno = 60;
+int velocidad_maxima = 60;  //40 //Maximo 255 nieveles
+int velocidad_freno = 30;
+
+int velocidad_motor_izquierdo = 30;
+int velocidad_motor_derecho = 30;
 
 // Data para intrgal
 int error1 = 0;
@@ -74,7 +77,7 @@ void setup() {
   waitButton();
 
   digitalWrite(LEDS, HIGH);
-  delay(3000);
+  delay(2000);
   barraSensores.leer_blanco();  // Poner sensores en blanco
   Serial.println("Lectura de blanco correctas");
   digitalWrite(LEDS, LOW);
@@ -82,7 +85,7 @@ void setup() {
   waitButton();  // Presionar botón
 
   digitalWrite(LEDS, HIGH);
-  delay(3000);
+  delay(2000);
   barraSensores.leer_negro();  // Poner sensores en negro
   Serial.println("Lectura de negro correctas");
   digitalWrite(LEDS, LOW);
@@ -128,16 +131,20 @@ void waitButton() {
 // Cálculo de pid y control de motores
 void pid() {
   proporcional = p - 750;
-  // Serial.println(proporcional);
+  Serial.print("proporcional: ");
+  Serial.print(proporcional);
 
-  if (proporcional <= -target) {
-    puenteH.freno(true, velocidad_freno);
-  } else if (proporcional >= target) {
-    puenteH.freno(false, velocidad_freno);
-  }
+  // if (proporcional <= -target) {
+  //   puenteH.motorDer(velocidad_maxima);
+  //   puenteH.freno(true, velocidad_freno);
+  // } else if (proporcional >= target) {
+  //   puenteH.motorIzq(velocidad_maxima);
+  //   puenteH.freno(false, velocidad_freno);
+  // }
 
   derivativo = proporcional - last_prop;
   integral = error1 + error2 + error3 + error4 + error5 + error6;
+
   last_prop = proporcional;
 
   error6 = error5;
@@ -149,15 +156,18 @@ void pid() {
 
   diferencial = (proporcional * kp) + (derivativo * kd) + (integral * ki);
 
-  if (diferencial > velocidad_maxima) diferencial = velocidad_maxima;
-  else if (diferencial < -velocidad_maxima) diferencial = -velocidad_maxima;
+  diferencial = constrain(diferencial, -255, 255);
 
-  (diferencial < 0) ? puenteH.motores(velocidad_maxima + diferencial, velocidad_maxima) : puenteH.motores(velocidad_maxima, velocidad_maxima - diferencial);
+  velocidad_motor_izquierdo = constrain(velocidad_maxima + diferencial, -velocidad_maxima, velocidad_maxima);
+  velocidad_motor_derecho = constrain(velocidad_maxima - diferencial, -velocidad_maxima, velocidad_maxima);
 
-  // Serial.print("v max - diferencial: ");
-  // Serial.print(velocidad_maxima - diferencial);
-  // Serial.print(", v max + diferencial: ");
-  // Serial.print(velocidad_maxima + diferencial);
+  // (diferencial < 0) ? puenteH.motores(velocidad_motor_izquierdo, velocidad_maxima) : puenteH.motores(velocidad_maxima, velocidad_motor_derecho);
+  puenteH.motores(velocidad_motor_izquierdo, velocidad_motor_derecho);
+
+  // Serial.print(", vel izq: ");
+  // Serial.print(velocidad_motor_izquierdo);
+  // Serial.print(", vel der: ");
+  // Serial.print(velocidad_motor_derecho);
   // Serial.print(", diferencial: ");
   // Serial.println(diferencial);
 }
