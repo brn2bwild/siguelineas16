@@ -1,12 +1,7 @@
-/*
-  IngenieroMakerSeguidor16sESP32nano.cpp 
-*/
-
 #include "Arduino.h"
-#include "IngenieroMakerSeguidor16sESP32nano.h"
+#include "BarraSensores16.h"
 
-
-void barra16::leer_blanco() {
+void BarraSensores16::leer_blanco() {
   pinMode(LedsIr, OUTPUT);  //
   pinMode(S0, OUTPUT);
   pinMode(S1, OUTPUT);
@@ -27,7 +22,7 @@ void barra16::leer_blanco() {
   //Serial.println("Valores en blanco");
 }
 
-void barra16::leer_negro() {
+void BarraSensores16::leer_negro() {
   pinMode(LedsIr, OUTPUT);  //
   pinMode(S0, OUTPUT);
   pinMode(S1, OUTPUT);
@@ -47,7 +42,8 @@ void barra16::leer_negro() {
   }
   // Serial.println(" valores en negro");
 }
-void barra16::Calcula_muestras() {
+
+void BarraSensores16::Calcula_muestras() {
   for (int i = 0; i <= 15; i++) {
     Muestras[i] = (sensorValores_B[i] + sensorValores_N[i]) / 2;
     //   Serial.print(i);  //
@@ -58,7 +54,7 @@ void barra16::Calcula_muestras() {
   //   Serial.println("promedio");
 }
 
-void barra16::Leer_Sensores_Linea(boolean L) {
+void BarraSensores16::Leer_Sensores_Linea(boolean L) {
   pinMode(LedsIr, OUTPUT);  //
   pinMode(S0, OUTPUT);
   pinMode(S1, OUTPUT);
@@ -91,29 +87,32 @@ void barra16::Leer_Sensores_Linea(boolean L) {
   if (x > 0) { x1 = x; }
 }
 
-int barra16::proporcional() {
-
+int BarraSensores16::proporcional() {
   if (y > 0) { p = x / y; }
 
   if (y == 0 && x1 > 750) { p = 1500; }
 
   if (y == 0 && x1 < 750) { p = 50; }
+
   return p;
 }
 
-int barra16::C_sencero() {
+int BarraSensores16::C_sencero() {
   s0 = sensorValores[0];
   return s0;
 }
-int barra16::C_senuno() {
+
+int BarraSensores16::C_senuno() {
   s1 = sensorValores[1];
   return s1;
 }
-int barra16::C_sencato() {
+
+int BarraSensores16::C_sencato() {
   s14 = sensorValores[14];
   return s14;
 }
-int barra16::C_senquin() {
+
+int BarraSensores16::C_senquin() {
   s15 = sensorValores[15];
   return s15;
 }
