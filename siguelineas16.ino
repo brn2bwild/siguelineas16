@@ -1,25 +1,25 @@
-/*Codigo de ejemplo para un seguidor de linea basado en:
- * ESP32 Nano
- * Motores pololu 6V HPCP
- * Max14870
- * Barra de 16 sensores marca Ingeniero Maker
- * Chasis para seguidor de linea en PCB marca Ingeniero Maker
- * Modulo de arranque
- * 
- * Procedimiento de Calibración
- * 1.-la barra de sensores se debe poner primero en el color blanco de la pista procurando 
- * que todos los sensores esten sobre el color blanco.
- * 
- * 2.- Presionar el boton en el PCB del robot, despues de esto ya estara calibrado el color blanco.
- * 
- * 3.-la barra de sensores se debe poner despues en el color negro de la pista procurando 
- * que todos los sensores esten sobre el color negro.
- * 
- * 4.- Presionar el boton en el PCB del robot, despues de esto ya estara calibrado el color negro.
- * 
- * 5.- Presionar de nuevo el boton para hacer el calculo de muestras.
- * el robot se encuentra listo para el arranque.
- */
+/*
+
+Codigo de ejemplo para un seguidor de línea basado en:
+ - ESP32 Nano
+ - Motores pololu 6V HPCP
+ - Max14870
+ - Barra de 16 sensores marca Ingeniero Maker
+ - Chasis para seguidor de linea en PCB marca Ingeniero Maker
+ - Modulo de arranque
+
+Procedimiento de calibración
+1.- La barra de sensores se debe poner primero en el color blanco de la pista procurando que todos los sensores esten sobre el color blanco.
+
+2.- Presionar el boton en el PCB del robot, después de esto ya estará calibrado el color blanco.
+
+3.- La barra de sensores se debe poner después en el color negro de la pista procurando que todos los sensores esten sobre el color negro.
+
+4.- Presionar el boton en el PCB del robot, despues de esto ya estará calibrado el color negro.
+
+5.- Presionar de nuevo el boton para hacer el cálculo de muestras, el robot se encuentra listo para el arranque.
+
+*/
 
 #include <BarraSensores16.h>
 #include <Max14870.h>
@@ -27,53 +27,61 @@
 PuenteH puenteH;
 BarraSensores16 barraSensores;
 
-//Mapeo de pines
-#define LEDS 48
-#define GO 17
-#define BOTON 7
+// #define DEBUG /* Para debuggear el código descomentamos esta línea */
 
-// Constantes para PID
+/* constante para el diferencial */
+const int diferencial_maximo = 1023;
+
+/* Constantes para PID */
+const float kp = 0.2;    //0.01;
+const float kd = 1.3;    // 1.0;
+const float ki = 0.016;  //.006s
+
+/* Variable para guardar el valor de la posición*/
 int p;
-float kp = 0.2;      //0.01;
-float kd = 1.3;    // 1.0;
-float ki = 0.016;  //.006s
 
-// Regulación de la velocidad Máxima
-int velocidad_maxima = 60;  //40 //Maximo 255 nieveles
-int velocidad_freno = 30;
+/* Regulación de la velocidad Máxima */
+const int velocidad_maxima = 400;  //Máximo 1023 nieveles
+const int velocidad_freno = 400;
 
-int velocidad_motor_izquierdo = 30;
-int velocidad_motor_derecho = 30;
+int velocidad_motor_izquierdo = 0;
+int velocidad_motor_derecho = 0;
 
-// Data para intrgal
+/* Variables para calcular la integral */
 int error1 = 0;
 int error2 = 0;
 int error3 = 0;
 int error4 = 0;
 int error5 = 0;
 int error6 = 0;
-unsigned int position = 0;
 
-//declara variables para utilizar PID
-int proporcional = 0;  // Proporcional
-int integral = 0;      // Integral
-int derivativo = 0;    // Derivativo
-int diferencial = 0;   // Diferencia aplicada a los motores
-int last_prop;         // Última valor del proporcional (utilizado para calcular la derivada del error)
-int target = 750;      // Setpoint (Como utilizamos 16 sensores, la línea debe estar entre 0 y 1500, por lo que el ideal es que esté en 750)
+/* Variables para utilizar en el PID */
+const int target = 750;  // Setpoint (Como utilizamos 16 sensores, la línea debe estar entre 0 y 1500, por lo que el ideal es que esté en 750)
+int proporcional = 0;    // Proporcional
+int integral = 0;        // Integral
+int derivativo = 0;      // Derivativo
+int diferencial = 0;     // Diferencia aplicada a los motores
+int last_prop;           // Última valor del proporcional (utilizado para calcular la derivada del error)
+
+/* Mapeo de pines */
+const uint8_t LEDS = 48;
+const uint8_t GO = 17;
+const uint8_t BOTON = 7;
 
 void setup() {
   puenteH.begin();
 
+#ifdef DEBUG
   Serial.begin(115200);
   delay(10);
+#endif
 
-  // Declaramos como salida los pines utilizados
+  /* Declaramos como salida los pines utilizados */
   pinMode(LEDS, OUTPUT);
   pinMode(GO, INPUT);
   pinMode(BOTON, INPUT);
 
-  // Calibración
+  /* Iniciamos el proceso de calibración */
   waitButton();
 
   digitalWrite(LEDS, HIGH);
@@ -128,11 +136,9 @@ void waitButton() {
   while (digitalRead(BOTON)) {}
 }
 
-// Cálculo de pid y control de motores
+/* Cálculo de pid y control de motores */
 void pid() {
   proporcional = p - 750;
-  Serial.print("proporcional: ");
-  Serial.print(proporcional);
 
   // if (proporcional <= -target) {
   //   puenteH.motorDer(velocidad_maxima);
@@ -143,6 +149,7 @@ void pid() {
   // }
 
   derivativo = proporcional - last_prop;
+
   integral = error1 + error2 + error3 + error4 + error5 + error6;
 
   last_prop = proporcional;
@@ -156,18 +163,22 @@ void pid() {
 
   diferencial = (proporcional * kp) + (derivativo * kd) + (integral * ki);
 
-  diferencial = constrain(diferencial, -255, 255);
-
   velocidad_motor_izquierdo = constrain(velocidad_maxima + diferencial, -velocidad_maxima, velocidad_maxima);
   velocidad_motor_derecho = constrain(velocidad_maxima - diferencial, -velocidad_maxima, velocidad_maxima);
 
-  // (diferencial < 0) ? puenteH.motores(velocidad_motor_izquierdo, velocidad_maxima) : puenteH.motores(velocidad_maxima, velocidad_motor_derecho);
+  /* Descomentar esta línea para activar los motores*/
+#ifndef DEBUG
   puenteH.motores(velocidad_motor_izquierdo, velocidad_motor_derecho);
+#endif
 
-  // Serial.print(", vel izq: ");
-  // Serial.print(velocidad_motor_izquierdo);
-  // Serial.print(", vel der: ");
-  // Serial.print(velocidad_motor_derecho);
-  // Serial.print(", diferencial: ");
-  // Serial.println(diferencial);
+#ifdef DEBUG
+  Serial.print("proporcional: ");
+  Serial.print(proporcional);
+  Serial.print(", diferencial: ");
+  Serial.print(diferencial);
+  Serial.print(", vel izq: ");
+  Serial.print(velocidad_motor_izquierdo);
+  Serial.print(", vel der: ");
+  Serial.println(velocidad_motor_derecho);
+#endif
 }

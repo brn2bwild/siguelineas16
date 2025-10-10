@@ -10,6 +10,9 @@ public:
   const int dirMotorDer = 9;
   const int motorDerPwm = 8;
 
+  const int pwmFreq = 5000;
+  const int pwmRes = 10;
+
   void begin();
   void motorDer(int velocidad);
   void motorIzq(int velocidad);
