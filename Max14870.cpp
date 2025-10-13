@@ -4,11 +4,17 @@
 #include "Max14870.h"
 
 void PuenteH::begin() {
-  pinMode(motorDerPwm, OUTPUT);
-  pinMode(motorIzqPwm, OUTPUT);
+  // pinMode(motorDerPwm, OUTPUT);
+  // pinMode(motorIzqPwm, OUTPUT);
 
-  analogWrite(motorDerPwm, 0);
-  analogWrite(motorIzqPwm, 0);
+  ledcAttach(motorIzqPwm, pwmFreq, pwmRes);
+  ledcAttach(motorDerPwm, pwmFreq, pwmRes);
+
+  ledcWrite(motorIzqPwm, 0);
+  ledcWrite(motorDerPwm, 0);
+
+  // analogWrite(motorDerPwm, 0);
+  // analogWrite(motorIzqPwm, 0);
 
   pinMode(dirMotorDer, OUTPUT);
   pinMode(dirMotorIzq, OUTPUT);
@@ -17,20 +23,24 @@ void PuenteH::begin() {
 void PuenteH::motorIzq(int velocidad) {
   if (velocidad > 0) {
     digitalWrite(dirMotorIzq, HIGH);
-    analogWrite(motorIzqPwm, velocidad);
+    ledcWrite(motorIzqPwm, velocidad);
+    // analogWrite(motorIzqPwm, velocidad);
   } else {
     digitalWrite(dirMotorIzq, LOW);
-    analogWrite(motorIzqPwm, (-1) * velocidad);
+    ledcWrite(motorIzqPwm, (-1) * velocidad);
+    // analogWrite(motorIzqPwm, (-1) * velocidad);
   }
 }
 
 void PuenteH::motorDer(int velocidad) {
   if (velocidad > 0) {
     digitalWrite(dirMotorDer, LOW);
-    analogWrite(motorDerPwm, velocidad);
+    ledcWrite(motorDerPwm, velocidad);
+    // analogWrite(motorDerPwm, velocidad);
   } else {
     digitalWrite(dirMotorDer, HIGH);
-    analogWrite(motorDerPwm, (-1) * velocidad);
+    ledcWrite(motorDerPwm, (-1) * velocidad);
+    // analogWrite(motorDerPwm, (-1) * velocidad);
   }
 }
 
@@ -41,10 +51,10 @@ void PuenteH::motores(int velIzq, int velDer) {
 
 void PuenteH::freno(bool sentido, int velocidad) {
   if (sentido) {
-    motorIzq(-velocidad);
+    motorIzq((-1) * velocidad);
     motorDer(velocidad);
   } else {
     motorIzq(velocidad);
-    motorDer(-velocidad);
+    motorDer((-1) * velocidad);
   }
 }
