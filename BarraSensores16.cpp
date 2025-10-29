@@ -88,11 +88,13 @@ void BarraSensores16::Leer_Sensores_Linea(boolean L) {
 }
 
 int BarraSensores16::proporcional() {
-  if (y > 0) { p = x / y; }
-
-  if (y == 0 && x1 > 750) { p = 1500; }
-
-  if (y == 0 && x1 < 750) { p = 0; }
+  if (y > 0) {
+    p = x / y;
+  } else if (y == 0 && x1 > 750) {
+    p = 1500;
+  } else if (y == 0 && x1 < 750) {
+    p = 0;
+  }
 
   return p;
 }
