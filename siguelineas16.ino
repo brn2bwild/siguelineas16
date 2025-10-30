@@ -31,7 +31,7 @@ Procedimiento de calibración
 
 /* Constantes para PID */
 #define KP 0.2        //0.01;
-#define KI 0.016      //.006s
+#define KI 0.0      //.006s
 #define KD 1.3        // 1.0;
 #define SETPOINT 750  // Setpoint (Como utilizamos 16 sensores, la línea debe estar entre 0 y 1500, por lo que el ideal es que esté en 750)
 
@@ -139,7 +139,7 @@ void pid(int p) {
   //   puenteH.freno(false, BRAKE_SPEED);
   // }
 
-  integral += (Ki * error);
+  integral += (KI * error);
   
   derivative = error - last_error;
 
