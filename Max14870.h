@@ -1,14 +1,15 @@
 #ifndef PuenteH_h
 #define PuenteH_h
 #include "Arduino.h"
+#include <stdint.h>
 
 class PuenteH {
 public:
-  const int dirMotorIzq = 18;
-  const int motorIzqPwm = 6;
+  const uint8_t dirMotorIzq = 18;
+  const uint8_t motorIzqPwm = 6;
 
-  const int dirMotorDer = 9;
-  const int motorDerPwm = 8;
+  const uint8_t dirMotorDer = 9;
+  const uint8_t motorDerPwm = 8;
 
   const int pwmFreq = 5000;
   const int pwmRes = 10;
