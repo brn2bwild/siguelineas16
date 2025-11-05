@@ -30,24 +30,24 @@ Procedimiento de calibración
 // #define DEBUG /* Para debuggear el código descomentamos esta línea */
 
 /* Constantes para PID */
-#define KP 0.2        //0.01;
-#define KI 0.0      //.006s
-#define KD 1.3        // 1.0;
+#define KP 2.9      // 0.01;
+#define KI 0.0        //.006s
+#define KD 24.1        // 1.0;
 #define SETPOINT 750  // Setpoint (Como utilizamos 16 sensores, la línea debe estar entre 0 y 1500, por lo que el ideal es que esté en 750)
 
 /* Regulación de la velocidad Máxima */
-#define MAX_SPEED 400  //Máximo 1023 nieveles
-#define MIN_SPEED 200
+#define MAX_SPEED 600  //Máximo 1023 nieveles
+#define MIN_SPEED (-1)*MAX_SPEED
 #define BRAKE_SPEED 400
 
-/* constante para el diferencial */
-#define MAX_ADJUST 1023
+/* constante para valor máximo del PWM */
+#define MAX_PWM_VALUE 1023
 
 /* Variable para guardar el valor de la posición */
 // int p;
 
 /* Variables para las velocidades de los motores */
-int left_motor_speed, right_motor_speed;
+int left_motor_speed, right_motor_speed, speed = 500;
 
 /* Variables para calcular la integral */
 int error1, error2, error3, error4, error5, error6;
@@ -140,8 +140,10 @@ void pid(int p) {
   // }
 
   integral += (KI * error);
-  
+
   derivative = error - last_error;
+
+  integral = constrain(integral, 0, MAX_PWM_VALUE);
 
   // integral = error1 + error2 + error3 + error4 + error5 + error6;
 
@@ -152,12 +154,12 @@ void pid(int p) {
   // error2 = error1;
   // error1 = error;
 
-  int adjust = (KP * error) + integral + (KD * derivative);
+  int adjust = (KP * error) + (KD * derivative);
 
   last_error = error;
 
-  left_motor_speed = constrain(MAX_SPEED - adjust, MIN_SPEED, MAX_SPEED);
-  right_motor_speed = constrain(MAX_SPEED + adjust, MIN_SPEED, MAX_SPEED);
+  left_motor_speed = constrain(speed - adjust, MIN_SPEED, MAX_SPEED);
+  right_motor_speed = constrain(speed + adjust, MIN_SPEED, MAX_SPEED);
 
 #ifndef DEBUG
   puenteH.motores(left_motor_speed, right_motor_speed);
