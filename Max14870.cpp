@@ -1,3 +1,4 @@
+#include "esp32-hal-ledc.h"
 #include "esp32-hal.h"
 #include "esp32-hal-gpio.h"
 #include "Arduino.h"
@@ -21,27 +22,29 @@ void PuenteH::begin() {
 }
 
 void PuenteH::motorIzq(int velocidad) {
-  if (velocidad > 0) {
+  if (velocidad >= 0) {
     digitalWrite(dirMotorIzq, HIGH);
-    ledcWrite(motorIzqPwm, velocidad);
+    // ledcWrite(motorIzqPwm, velocidad);
     // analogWrite(motorIzqPwm, velocidad);
   } else {
     digitalWrite(dirMotorIzq, LOW);
-    ledcWrite(motorIzqPwm, (-1) * velocidad);
+    // ledcWrite(motorIzqPwm, (-1) * velocidad);
     // analogWrite(motorIzqPwm, (-1) * velocidad);
   }
+  ledcWrite(dirMotorIzq, abs(velocidad));
 }
 
 void PuenteH::motorDer(int velocidad) {
-  if (velocidad > 0) {
+  if (velocidad >= 0) {
     digitalWrite(dirMotorDer, LOW);
-    ledcWrite(motorDerPwm, velocidad);
+    // ledcWrite(motorDerPwm, velocidad);
     // analogWrite(motorDerPwm, velocidad);
   } else {
     digitalWrite(dirMotorDer, HIGH);
-    ledcWrite(motorDerPwm, (-1) * velocidad);
+    // ledcWrite(motorDerPwm, (-1) * velocidad);
     // analogWrite(motorDerPwm, (-1) * velocidad);
   }
+  ledcWrite(dirMotorDer, abs(velocidad));
 }
 
 void PuenteH::motores(int velIzq, int velDer) {
