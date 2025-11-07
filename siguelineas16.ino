@@ -30,21 +30,21 @@ Procedimiento de calibración
 // #define DEBUG /* Para debuggear el código descomentamos esta línea */
 
 /* Constantes para PID */
-#define KP 2.9        // 0.01;
-#define KI 0.0        //.006s
-#define KD 24.1       // 1.0;
-#define SETPOINT 750  // Setpoint (Como utilizamos 16 sensores, la línea debe estar entre 0 y 1500, por lo que el ideal es que esté en 750)
+const int KP = 0.5;        // 0.01;
+const int KI = 0.0;        //.006s
+const int KD = 3.0;        // 1.0;
+const int SETPOINT = 750;  // Setpoint (Como utilizamos 16 sensores, la línea debe estar entre 0 y 1500, por lo que el ideal es que esté en 750)
 
 /* Regulación de la velocidad Máxima */
-#define MAX_SPEED 600  //Máximo 1023 nieveles
-#define MIN_SPEED (-1) * MAX_SPEED
-#define BRAKE_SPEED 800
+const int MAX_SPEED = 100;  //Máximo 1023 nieveles
+const int MIN_SPEED = MAX_SPEED * -1;
+const int BRAKE_SPEED = 100;
 
 /* constante para valor máximo del PWM */
-#define MAX_PWM_VALUE 1023
+const int MAX_PWM_VALUE = 1023;
 
 /* Variable para guardar el valor de la posición */
-// int p;
+int input;
 
 /* Variables para las velocidades de los motores */
 int left_motor_speed, right_motor_speed;
@@ -56,13 +56,13 @@ int left_motor_speed, right_motor_speed;
 int error = 0;       // Proporcional
 int integral = 0;    // Integral
 int derivative = 0;  // derivative
-int last_error;      // Última valor del proporcional (utilizado para calcular la derivada del error)
+int last_input;      // Última valor del proporcional (utilizado para calcular la derivada del error)
 
 PuenteH puenteH;
 BarraSensores16 barraSensores;
 
 void setup() {
-  puenteH.begin();
+  // puenteH.begin();
 
 #ifdef DEBUG
   Serial.begin(115200);
@@ -111,7 +111,9 @@ void loop() {
   while (digitalRead(GO)) {
     barraSensores.Leer_Sensores_Linea(0);
 
-    pid(barraSensores.proporcional());
+    input = barraSensores.proporcional();
+
+    pid();
   }
 
   puenteH.motores(0, 0);
@@ -128,8 +130,8 @@ void waitButton() {
 }
 
 /* Cálculo de pid y control de motores */
-void pid(int p) {
-  error = SETPOINT - p;
+void pid() {
+  error = input - SETPOINT;
 
 #ifndef DEBUG
   if (error <= -SETPOINT) {
@@ -149,13 +151,11 @@ void pid(int p) {
 
   // integral += (KI * error);
 
-  // integral = constrain(integral, 0, MAX_PWM_VALUE);
-
-  derivative = error - last_error;
+  derivative = input - last_input;
 
   int diff = (KP * error) + (KD * derivative);
 
-  last_error = error;
+  last_input = input;
 
   left_motor_speed = constrain(MAX_SPEED - diff, MIN_SPEED, MAX_SPEED);
   right_motor_speed = constrain(MAX_SPEED + diff, MIN_SPEED, MAX_SPEED);
