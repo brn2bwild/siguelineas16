@@ -91,9 +91,9 @@ int BarraSensores16::proporcional() {
   if (y > 0) {
     p = x / y;
   } else if (y == 0 && x1 > 750) {
-    p = 1450;
+    p = 1500;
   } else if (y == 0 && x1 < 750) {
-    p = 50;
+    p = 0;
   }
 
   return p;

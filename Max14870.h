@@ -11,10 +11,11 @@ public:
   const uint8_t dirMotorDer = 9;
   const uint8_t motorDerPwm = 8;
 
-  const int pwmFreq = 5000;
+  const int pwmFreq = 1000;
   const int pwmRes = 10;
 
-  void begin();
+  // void begin();
+  PuenteH();
   void motorDer(int velocidad);
   void motorIzq(int velocidad);
   void motores(int velDer, int velIzqr);

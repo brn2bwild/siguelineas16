@@ -30,39 +30,39 @@ Procedimiento de calibración
 // #define DEBUG /* Para debuggear el código descomentamos esta línea */
 
 /* Constantes para PID */
-#define KP 2.9      // 0.01;
-#define KI 0.0        //.006s
-#define KD 24.1        // 1.0;
-#define SETPOINT 750  // Setpoint (Como utilizamos 16 sensores, la línea debe estar entre 0 y 1500, por lo que el ideal es que esté en 750)
+const int KP = 0.5;        // 0.01;
+const int KI = 0.0;        //.006s
+const int KD = 3.0;        // 1.0;
+const int SETPOINT = 750;  // Setpoint (Como utilizamos 16 sensores, la línea debe estar entre 0 y 1500, por lo que el ideal es que esté en 750)
 
 /* Regulación de la velocidad Máxima */
-#define MAX_SPEED 600  //Máximo 1023 nieveles
-#define MIN_SPEED (-1)*MAX_SPEED
-#define BRAKE_SPEED 400
+const int MAX_SPEED = 100;  //Máximo 1023 nieveles
+const int MIN_SPEED = MAX_SPEED * -1;
+const int BRAKE_SPEED = 100;
 
 /* constante para valor máximo del PWM */
-#define MAX_PWM_VALUE 1023
+const int MAX_PWM_VALUE = 1023;
 
 /* Variable para guardar el valor de la posición */
-// int p;
+int input;
 
 /* Variables para las velocidades de los motores */
-int left_motor_speed, right_motor_speed, speed = 500;
+int left_motor_speed, right_motor_speed;
 
 /* Variables para calcular la integral */
-int error1, error2, error3, error4, error5, error6;
+// int error1, error2, error3, error4, error5, error6;
 
 /* Variables para utilizar en el PID */
 int error = 0;       // Proporcional
 int integral = 0;    // Integral
 int derivative = 0;  // derivative
-int last_error;      // Última valor del proporcional (utilizado para calcular la derivada del error)
+int last_input;      // Última valor del proporcional (utilizado para calcular la derivada del error)
 
 PuenteH puenteH;
 BarraSensores16 barraSensores;
 
 void setup() {
-  puenteH.begin();
+  // puenteH.begin();
 
 #ifdef DEBUG
   Serial.begin(115200);
@@ -111,7 +111,9 @@ void loop() {
   while (digitalRead(GO)) {
     barraSensores.Leer_Sensores_Linea(0);
 
-    pid(barraSensores.proporcional());
+    input = barraSensores.proporcional();
+
+    pid();
   }
 
   puenteH.motores(0, 0);
@@ -128,23 +130,16 @@ void waitButton() {
 }
 
 /* Cálculo de pid y control de motores */
-void pid(int p) {
-  error = SETPOINT - p;
+void pid() {
+  error = input - SETPOINT;
 
-  // if (error <= -SETPOINT) {
-  //   puenteH.motorDer(MAX_SPEED);
-  //   puenteH.freno(true, BRAKE_SPEED);
-  // } else if (error >= SETPOINT) {
-  //   puenteH.motorIzq(MAX_SPEED);
-  //   puenteH.freno(false, BRAKE_SPEED);
-  // }
-
-  integral += (KI * error);
-
-  derivative = error - last_error;
-
-  integral = constrain(integral, 0, MAX_PWM_VALUE);
-
+#ifndef DEBUG
+  if (error <= -SETPOINT) {
+    puenteH.motores(-BRAKE_SPEED, BRAKE_SPEED);
+  } else if (error >= SETPOINT) {
+    puenteH.motores(BRAKE_SPEED, -BRAKE_SPEED);
+  }
+#endif
   // integral = error1 + error2 + error3 + error4 + error5 + error6;
 
   // error6 = error5;
@@ -154,12 +149,16 @@ void pid(int p) {
   // error2 = error1;
   // error1 = error;
 
-  int adjust = (KP * error) + (KD * derivative);
+  // integral += (KI * error);
 
-  last_error = error;
+  derivative = input - last_input;
 
-  left_motor_speed = constrain(speed - adjust, MIN_SPEED, MAX_SPEED);
-  right_motor_speed = constrain(speed + adjust, MIN_SPEED, MAX_SPEED);
+  int diff = (KP * error) + (KD * derivative);
+
+  last_input = input;
+
+  left_motor_speed = constrain(MAX_SPEED - diff, MIN_SPEED, MAX_SPEED);
+  right_motor_speed = constrain(MAX_SPEED + diff, MIN_SPEED, MAX_SPEED);
 
 #ifndef DEBUG
   puenteH.motores(left_motor_speed, right_motor_speed);
@@ -168,8 +167,8 @@ void pid(int p) {
 #ifdef DEBUG
   Serial.print("error: ");
   Serial.print(error);
-  Serial.print(", adjust: ");
-  Serial.print(adjust);
+  Serial.print(", diff: ");
+  Serial.print(diff);
   Serial.print(", left speed: ");
   Serial.print(left_motor_speed);
   Serial.print(", right speed: ");
