@@ -11,8 +11,8 @@ public:
   const uint8_t dirMotorDer = 9;
   const uint8_t motorDerPwm = 8;
 
-  const int pwmFreq = 1000;
-  const int pwmRes = 10;
+  // const int pwmFreq = 1000;
+  // const int pwmRes = 10;
 
   // void begin();
   PuenteH();
