@@ -30,21 +30,21 @@ Procedimiento de calibración
 // #define DEBUG /* Para debuggear el código descomentamos esta línea */
 
 /* Constantes para PID */
-const float KP = 0.5;        // 0.01;
+const float KP = 2.0;        // 0.01;
 const float KI = 0.0;        //.006s
 const float KD = 0.0;        // 1.0;
 const int SETPOINT = 750;  // Setpoint (Como utilizamos 16 sensores, la línea debe estar entre 0 y 1500, por lo que el ideal es que esté en 750)
 
 /* Regulación de la velocidad Máxima */
-const int MAX_SPEED = 100;  //Máximo 1023 nieveles
+const int MAX_SPEED = 80;  //Máximo 1023 nieveles
 const int MIN_SPEED = MAX_SPEED * -1;
-const int BRAKE_SPEED = 100;
+const int BRAKE_SPEED = 120;
 
 /* constante para valor máximo del PWM */
-const int MAX_PWM_VALUE = 1023;
+const int MAX_DIFF = MAX_SPEED;
 
 /* Variable para guardar el valor de la posición */
-float input;
+unsigned int input;
 
 /* Variables para las velocidades de los motores */
 int left_motor_speed, right_motor_speed;
@@ -153,15 +153,18 @@ void pid() {
 
   derivative = input - last_input;
 
+  last_input = input;
+
   int diff = (KP * error) + (KD * derivative);
 
-  last_input = input;
+  diff = constrain(diff, -MAX_DIFF, MAX_DIFF);
 
   left_motor_speed = constrain(MAX_SPEED + diff, MIN_SPEED, MAX_SPEED);
   right_motor_speed = constrain(MAX_SPEED - diff, MIN_SPEED, MAX_SPEED);
 
 #ifndef DEBUG
-  puenteH.motores(left_motor_speed, right_motor_speed);
+  // puenteH.motores(left_motor_speed, right_motor_speed);
+  (diff < 0 ) ? puenteH.motores(left_motor_speed, MAX_SPEED) : puenteH.motores(MAX_SPEED, right_motor_speed);
 #endif
 
 #ifdef DEBUG
