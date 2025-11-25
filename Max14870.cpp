@@ -33,9 +33,9 @@ void PuenteH::motorIzq(int velocidad) {
 
 void PuenteH::motorDer(int velocidad) {
   if (velocidad >= 0) {
-    digitalWrite(dirMotorDer, LOW);
-  } else {
     digitalWrite(dirMotorDer, HIGH);
+  } else {
+    digitalWrite(dirMotorDer, LOW);
   }
   // ledcWrite(motorDerPwm, abs(velocidad));
   analogWrite(motorDerPwm, abs(velocidad));

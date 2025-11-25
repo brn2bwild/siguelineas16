@@ -30,21 +30,21 @@ Procedimiento de calibración
 // #define DEBUG /* Para debuggear el código descomentamos esta línea */
 
 /* Constantes para PID */
-const float KP = 0.5;        // 0.01;
-const float KI = 0.0;        //.006s
-const float KD = 0.0;        // 1.0;
+const float KP = 0.9;      // 0.01;
+const float KI = 0.009;    //.006s
+const float KD = 11.5;     // 1.0;
 const int SETPOINT = 750;  // Setpoint (Como utilizamos 16 sensores, la línea debe estar entre 0 y 1500, por lo que el ideal es que esté en 750)
 
 /* Regulación de la velocidad Máxima */
-const int MAX_SPEED = 100;  //Máximo 1023 nieveles
+const int MAX_SPEED = 80;  //Máximo 1023 nieveles
 const int MIN_SPEED = MAX_SPEED * -1;
-const int BRAKE_SPEED = 100;
+const int BRAKE_SPEED = 80;
 
 /* constante para valor máximo del PWM */
-const int MAX_PWM_VALUE = 1023;
+// const int MAX_PWM_VALUE = 1023;
 
 /* Variable para guardar el valor de la posición */
-float input;
+int input;
 
 /* Variables para las velocidades de los motores */
 int left_motor_speed, right_motor_speed;
@@ -77,6 +77,8 @@ void setup() {
   /* Iniciamos el proceso de calibración */
   waitButton();
 
+  puenteH.motores(60, 60);
+
   digitalWrite(LEDS, HIGH);
   delay(2000);
   barraSensores.leer_blanco();  // Poner sensores en blanco
@@ -102,7 +104,9 @@ void setup() {
     delay(100);
   }
 
+#ifndef DEBUG
   waitGo();  // Control de arranque
+#endif
 
   digitalWrite(LEDS, LOW);
 }
@@ -115,6 +119,7 @@ void loop() {
 
     pid();
   }
+  digitalWrite(LEDS, LOW);
 
   puenteH.motores(0, 0);
 }
@@ -140,28 +145,28 @@ void pid() {
     puenteH.motores(BRAKE_SPEED, -BRAKE_SPEED);
   }
 #endif
-  // integral = error1 + error2 + error3 + error4 + error5 + error6;
 
+  // integral = error1 + error2 + error3 + error4 + error5 + error6;
   // error6 = error5;
   // error5 = error4;
   // error4 = error3;
   // error3 = error2;
   // error2 = error1;
   // error1 = error;
-
-  // integral += (KI * error);
+  integral += (KI * error);
 
   derivative = input - last_input;
 
-  int diff = (KP * error) + (KD * derivative);
+  int diff = int(KP * error + KI * integral + KD * derivative);
 
   last_input = input;
 
-  left_motor_speed = constrain(MAX_SPEED + diff, MIN_SPEED, MAX_SPEED);
-  right_motor_speed = constrain(MAX_SPEED - diff, MIN_SPEED, MAX_SPEED);
+  diff = constrain(diff, MIN_SPEED, MAX_SPEED);
+  // left_motor_speed = constrain(MAX_SPEED + diff, MIN_SPEED, MAX_SPEED);
+  // right_motor_speed = constrain(MAX_SPEED - diff, MIN_SPEED, MAX_SPEED);
 
 #ifndef DEBUG
-  puenteH.motores(left_motor_speed, right_motor_speed);
+  puenteH.motores(constrain(MAX_SPEED - diff, MIN_SPEED, MAX_SPEED), constrain(MAX_SPEED + diff, MIN_SPEED, MAX_SPEED));
 #endif
 
 #ifdef DEBUG
@@ -170,8 +175,9 @@ void pid() {
   Serial.print(", diff: ");
   Serial.print(diff);
   Serial.print(", left speed: ");
-  Serial.print(left_motor_speed);
+  Serial.print(constrain(MAX_SPEED - diff, MIN_SPEED, MAX_SPEED));
   Serial.print(", right speed: ");
-  Serial.println(right_motor_speed);
+  Serial.println(constrain(MAX_SPEED + diff, MIN_SPEED, MAX_SPEED));
+  delay(100);
 #endif
 }
