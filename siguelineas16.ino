@@ -30,21 +30,21 @@ Procedimiento de calibración
 // #define DEBUG /* Para debuggear el código descomentamos esta línea */
 
 /* Constantes para PID */
-const float KP = 0.9;      // 0.01;
-const float KI = 0.009;    //.006s
-const float KD = 11.5;     // 1.0;
-const int SETPOINT = 750;  // Setpoint (Como utilizamos 16 sensores, la línea debe estar entre 0 y 1500, por lo que el ideal es que esté en 750)
+const float KP = 0.05;      // 0.01;
+const float KI = 0.007;     //.006s
+const float KD = 1.0;       // 1.0;
+const int SETPOINT = 3750;  // Setpoint (Como utilizamos 16 sensores, la línea debe estar entre 0 y 1500, por lo que el ideal es que esté en 750)
 
 /* Regulación de la velocidad Máxima */
-const int MAX_SPEED = 80;  //Máximo 1023 nieveles
-const int MIN_SPEED = MAX_SPEED * -1;
-const int BRAKE_SPEED = 80;
+const int MAX_SPEED = 120;  //Máximo 1023 nieveles
+const int MIN_SPEED = -1 * MAX_SPEED;
+const int BRAKE_SPEED = 180;
 
-/* constante para valor máximo del PWM */
-// const int MAX_PWM_VALUE = 1023;
+/* constante para valor máximo del diff */
+const int MAX_DIFF = 1000;
 
 /* Variable para guardar el valor de la posición */
-int input;
+// int input;
 
 /* Variables para las velocidades de los motores */
 int left_motor_speed, right_motor_speed;
@@ -62,12 +62,7 @@ PuenteH puenteH;
 BarraSensores16 barraSensores;
 
 void setup() {
-  // puenteH.begin();
-
-#ifdef DEBUG
   Serial.begin(115200);
-  delay(10);
-#endif
 
   /* Declaramos como salida los pines utilizados */
   pinMode(LEDS, OUTPUT);
@@ -76,8 +71,6 @@ void setup() {
 
   /* Iniciamos el proceso de calibración */
   waitButton();
-
-  puenteH.motores(60, 60);
 
   digitalWrite(LEDS, HIGH);
   delay(2000);
@@ -113,15 +106,11 @@ void setup() {
 
 void loop() {
   while (digitalRead(GO)) {
-    barraSensores.Leer_Sensores_Linea(0);
-
-    input = barraSensores.proporcional();
-
     pid();
   }
-  digitalWrite(LEDS, LOW);
-
   puenteH.motores(0, 0);
+
+  digitalWrite(LEDS, LOW);
 }
 
 // Esperar por módulo de arranque
@@ -136,13 +125,15 @@ void waitButton() {
 
 /* Cálculo de pid y control de motores */
 void pid() {
+  uint16_t input = barraSensores.Leer_Sensores_Linea(0);
+
   error = input - SETPOINT;
 
 #ifndef DEBUG
-  if (error <= -SETPOINT) {
-    puenteH.motores(-BRAKE_SPEED, BRAKE_SPEED);
-  } else if (error >= SETPOINT) {
+  if (error >= SETPOINT) {
     puenteH.motores(BRAKE_SPEED, -BRAKE_SPEED);
+  } else if (error <= -SETPOINT) {
+    puenteH.motores(-BRAKE_SPEED, BRAKE_SPEED);
   }
 #endif
 
@@ -153,31 +144,34 @@ void pid() {
   // error3 = error2;
   // error2 = error1;
   // error1 = error;
-  integral += (KI * error);
+  integral += error;
+  integral = constrain(integral, -1000, 1000);
 
   derivative = input - last_input;
 
-  int diff = int(KP * error + KI * integral + KD * derivative);
+  int diff = (KP * error) + (KI * integral) + (KD * derivative);
 
   last_input = input;
 
-  diff = constrain(diff, MIN_SPEED, MAX_SPEED);
-  // left_motor_speed = constrain(MAX_SPEED + diff, MIN_SPEED, MAX_SPEED);
-  // right_motor_speed = constrain(MAX_SPEED - diff, MIN_SPEED, MAX_SPEED);
+  diff = constrain(diff, -255, 255);
+
+  left_motor_speed = constrain(MAX_SPEED + diff, MIN_SPEED, MAX_SPEED);
+  right_motor_speed = constrain(MAX_SPEED - diff, MIN_SPEED, MAX_SPEED);
 
 #ifndef DEBUG
-  puenteH.motores(constrain(MAX_SPEED - diff, MIN_SPEED, MAX_SPEED), constrain(MAX_SPEED + diff, MIN_SPEED, MAX_SPEED));
+  (diff >= 0) ? puenteH.motores(MAX_SPEED, right_motor_speed) : puenteH.motores(left_motor_speed, MAX_SPEED);
 #endif
 
 #ifdef DEBUG
-  Serial.print("error: ");
-  Serial.print(error);
-  Serial.print(", diff: ");
-  Serial.print(diff);
-  Serial.print(", left speed: ");
-  Serial.print(constrain(MAX_SPEED - diff, MIN_SPEED, MAX_SPEED));
-  Serial.print(", right speed: ");
-  Serial.println(constrain(MAX_SPEED + diff, MIN_SPEED, MAX_SPEED));
+  if (error >= SETPOINT) {
+    Serial.printf("error: %d, diff: %d, l-speed: %d, r-speed: %d\n", error, diff, BRAKE_SPEED, -BRAKE_SPEED);
+  } else if (error <= -SETPOINT) {
+    Serial.printf("error: %d, diff: %d, l-speed: %d, r-speed: %d\n", error, diff, -BRAKE_SPEED, BRAKE_SPEED);
+  } else if (diff >= 0) {
+    Serial.printf("error: %d, diff: %d, l-speed: %d, r-speed: %d\n", error, diff, MAX_SPEED, right_motor_speed);
+  } else if (diff < 0) {
+    Serial.printf("error: %d, diff: %d, l-speed: %d, r-speed: %d\n", error, diff, left_motor_speed, MAX_SPEED);
+  }
   delay(100);
 #endif
 }

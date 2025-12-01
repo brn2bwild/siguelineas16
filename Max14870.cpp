@@ -5,14 +5,14 @@
 #include "Max14870.h"
 
 PuenteH::PuenteH() {
-  pinMode(dirMotorDer, OUTPUT);
-  pinMode(dirMotorIzq, OUTPUT);
-
   pinMode(motorIzqPwm, OUTPUT);
   pinMode(motorDerPwm, OUTPUT);
 
   analogWrite(motorDerPwm, 0);
   analogWrite(motorIzqPwm, 0);
+
+  pinMode(dirMotorDer, OUTPUT);
+  pinMode(dirMotorIzq, OUTPUT);
 
   // ledcAttach(motorIzqPwm, pwmFreq, pwmRes);
   // ledcAttach(motorDerPwm, pwmFreq, pwmRes);

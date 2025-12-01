@@ -54,7 +54,7 @@ void BarraSensores16::Calcula_muestras() {
   //   Serial.println("promedio");
 }
 
-void BarraSensores16::Leer_Sensores_Linea(boolean L) {
+int BarraSensores16::Leer_Sensores_Linea(boolean L) {
   pinMode(LedsIr, OUTPUT);  //
   pinMode(S0, OUTPUT);
   pinMode(S1, OUTPUT);
@@ -80,19 +80,29 @@ void BarraSensores16::Leer_Sensores_Linea(boolean L) {
       }
     }
   }
-  x = (1500 * Valor_Digital[0] + 1400 * Valor_Digital[1] + 1300 * Valor_Digital[2] + 1200 * Valor_Digital[3] + 1100 * Valor_Digital[4] + 1000 * Valor_Digital[5] + 900 * Valor_Digital[6] + 800 * Valor_Digital[7] + 700 * Valor_Digital[8] + 600 * Valor_Digital[9] + 500 * Valor_Digital[10] + 400 * Valor_Digital[11] + 300 * Valor_Digital[12] + 200 * Valor_Digital[13] + 100 * Valor_Digital[14] + 0 * Valor_Digital[15]);
+  x = (7500 * Valor_Digital[0] + 7000 * Valor_Digital[1] + 6500 * Valor_Digital[2] + 6000 * Valor_Digital[3] + 5500 * Valor_Digital[4] + 5000 * Valor_Digital[5] + 4500 * Valor_Digital[6] + 4000 * Valor_Digital[7] + 3500 * Valor_Digital[8] + 3000 * Valor_Digital[9] + 2500 * Valor_Digital[10] + 2000 * Valor_Digital[11] + 1500 * Valor_Digital[12] + 1000 * Valor_Digital[13] + 500 * Valor_Digital[14] + 0 * Valor_Digital[15]);
 
   y = (Valor_Digital[0] + Valor_Digital[1] + Valor_Digital[2] + Valor_Digital[3] + Valor_Digital[4] + Valor_Digital[5] + Valor_Digital[6] + Valor_Digital[7] + Valor_Digital[8] + Valor_Digital[9] + Valor_Digital[10] + Valor_Digital[11] + Valor_Digital[12] + Valor_Digital[13] + Valor_Digital[14] + Valor_Digital[15]);
 
   if (x > 0) { x1 = x; }
+
+  if (y > 0) {
+    p = x / y;
+  } else if (y == 0 && x1 > 3750) {
+    p = 7500;
+  } else if (y == 0 && x1 < 3750) {
+    p = 0;
+  }
+
+  return p;
 }
 
 int BarraSensores16::proporcional() {
   if (y > 0) {
     p = x / y;
-  } else if (y == 0 && x1 > 750) {
-    p = 1500;
-  } else if (y == 0 && x1 < 750) {
+  } else if (y == 0 && x1 > 3750) {
+    p = 7000;
+  } else if (y == 0 && x1 < 3750) {
     p = 0;
   }
 

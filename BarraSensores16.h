@@ -30,10 +30,11 @@ public:
 
   // Variables de calibracion
   int Muestras[16] = { 590, 686, 600, 600, 617, 585, 631, 566, 592, 563, 617, 627, 634, 697, 616, 650 };
+
   void leer_blanco();
   void leer_negro();
   void Calcula_muestras();
-  void Leer_Sensores_Linea(boolean L);
+  int Leer_Sensores_Linea(boolean L);
   int proporcional();
   int C_sencero();
   int C_senuno();
