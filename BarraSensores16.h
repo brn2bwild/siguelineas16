@@ -5,7 +5,7 @@
 class BarraSensores16 {
 public:
   // Constantes para los pines de conexión
-  const int LedsIr = 48;     // Pin para encender los leds ir
+  const int LedsIr = 38;     // Pin para encender los leds ir
   const int S0 = 1;          // Pin A0 de modo digital
   const int S1 = 2;          // Pin A1 de modo digital
   const int S2 = 3;          // Pin A2 de modo digital
