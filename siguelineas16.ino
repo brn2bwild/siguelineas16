@@ -33,15 +33,15 @@ Procedimiento de calibración
 // #define DEBUG /* Para debuggear el código descomentamos esta línea */
 
 /* Constantes para PID */
-const float KP = 0.05;      // 0.01;
-const float KI = 0.007;     //.006s
-const float KD = 1.0;       // 1.0;
+const float KP = 0.065;      // 0.01;
+const float KI = 0.008;     //.006s
+const float KD = 0.9;       // 1.0;
 const int SETPOINT = 3750;  // Setpoint (Como utilizamos 16 sensores, la línea debe estar entre 0 y 1500, por lo que el ideal es que esté en 750)
 
 /* Regulación de la velocidad Máxima */
-const int MAX_SPEED = 120;  //Máximo 1023 nieveles
+const int MAX_SPEED = 130;  //Máximo 1023 nieveles
 const int MIN_SPEED = -1 * MAX_SPEED;
-const int BRAKE_SPEED = 180;
+const int BRAKE_SPEED = 200;
 
 /* constante para valor máximo del diff */
 const int MAX_DIFF = 1000;
