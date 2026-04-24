@@ -80,7 +80,7 @@ int BarraSensores16::Leer_Sensores_Linea(boolean L) {
       }
     }
   }
-  x = (7500 * Valor_Digital[0] + 7000 * Valor_Digital[1] + 6500 * Valor_Digital[2] + 6000 * Valor_Digital[3] + 5500 * Valor_Digital[4] + 5000 * Valor_Digital[5] + 4500 * Valor_Digital[6] + 4000 * Valor_Digital[7] + 3500 * Valor_Digital[8] + 3000 * Valor_Digital[9] + 2500 * Valor_Digital[10] + 2000 * Valor_Digital[11] + 1500 * Valor_Digital[12] + 1000 * Valor_Digital[13] + 500 * Valor_Digital[14] + 0 * Valor_Digital[15]);
+  x = (15000 * Valor_Digital[0] + 14000 * Valor_Digital[1] + 13000 * Valor_Digital[2] + 12000 * Valor_Digital[3] + 11000 * Valor_Digital[4] + 10000 * Valor_Digital[5] + 9000 * Valor_Digital[6] + 8000 * Valor_Digital[7] + 7000 * Valor_Digital[8] + 6000 * Valor_Digital[9] + 5000 * Valor_Digital[10] + 4000 * Valor_Digital[11] + 3000 * Valor_Digital[12] + 2000 * Valor_Digital[13] + 1000 * Valor_Digital[14] + 0 * Valor_Digital[15]);
 
   y = (Valor_Digital[0] + Valor_Digital[1] + Valor_Digital[2] + Valor_Digital[3] + Valor_Digital[4] + Valor_Digital[5] + Valor_Digital[6] + Valor_Digital[7] + Valor_Digital[8] + Valor_Digital[9] + Valor_Digital[10] + Valor_Digital[11] + Valor_Digital[12] + Valor_Digital[13] + Valor_Digital[14] + Valor_Digital[15]);
 
@@ -88,9 +88,9 @@ int BarraSensores16::Leer_Sensores_Linea(boolean L) {
 
   if (y > 0) {
     p = x / y;
-  } else if (y == 0 && x1 > 3750) {
-    p = 7500;
-  } else if (y == 0 && x1 < 3750) {
+  } else if (y == 0 && x1 > 7500) {
+    p = 15000;
+  } else if (y == 0 && x1 < 7500) {
     p = 0;
   }
 
@@ -100,9 +100,9 @@ int BarraSensores16::Leer_Sensores_Linea(boolean L) {
 int BarraSensores16::proporcional() {
   if (y > 0) {
     p = x / y;
-  } else if (y == 0 && x1 > 3750) {
-    p = 7000;
-  } else if (y == 0 && x1 < 3750) {
+  } else if (y == 0 && x1 > 7500) {
+    p = 15000;
+  } else if (y == 0 && x1 < 7500) {
     p = 0;
   }
 
