@@ -35,6 +35,7 @@ Procedimiento de calibración
 #define LED_BLUE 45
 #define GO 17
 #define BUTTON 7
+#define BUTTON_CALIBRACION 10
 #define PIN_ESC 21
 #define PIN_RDY 47
 
@@ -92,11 +93,11 @@ Preferences preferences;
 
 String processor(const String& var) {
   if (var == "KP") {
-    return String(preferences.getFloat("kp", 0.0));
+    return String(preferences.getFloat("kp", 0.0),5);
   } else if (var == "KI") {
-    return String(preferences.getFloat("ki", 0.0));
+    return String(preferences.getFloat("ki", 0.0),6);
   } else if (var == "KD") {
-    return String(preferences.getFloat("kd", 0.0));
+    return String(preferences.getFloat("kd", 0.0),5);
   } else if (var == "MAX_SPEED") {
     return String(preferences.getInt("max_speed", 0));
   } else if (var == "MAX_ESC") {
@@ -120,6 +121,7 @@ void setup() {
   pinMode(GO, INPUT);
   pinMode(BUTTON, INPUT);
   pinMode(PIN_RDY, INPUT);
+  pinMode(BUTTON_CALIBRACION, INPUT);
 
   digitalWrite(LED_RED, HIGH);
   digitalWrite(LED_GREEN, HIGH);
@@ -206,26 +208,64 @@ void setup() {
   });
   server.begin();
 
-  /* Iniciamos el proceso de calibración */
-  waitButton();
+  Serial.println("esperando a seleccionar modo");
+  bool modoCalibracion=false;
+  bool modoSeleccionado=false;
+  while(!modoSeleccionado){
+    digitalWrite(LED_BLUE, LOW);
+    delay(100);
+    digitalWrite(LED_BLUE, HIGH);
+    delay(100);
+    if (!digitalRead(BUTTON)){
+      modoCalibracion=false;
+      modoSeleccionado=true;
+    }
+    if (!digitalRead(BUTTON_CALIBRACION)) {
+      modoCalibracion = true;
+      modoSeleccionado = true;
+    }
+  }
+  delay(300);
+  if (modoCalibracion){
+    Serial.println("Modo calibracion");
+    waitButton();
+    digitalWrite(LED_RED, LOW);
+    delay(2000);
+    barraSensores.leer_blanco();
+    Serial.println("Blanco calibrado");
+    digitalWrite(LED_RED, HIGH);
 
-  digitalWrite(LED_RED, LOW);
-  delay(2000);
-  barraSensores.leer_blanco();  // Poner sensores en blanco
-  Serial.println("Lectura de blanco correctas");
-  digitalWrite(LED_RED, HIGH);
+    //Calibrar NEGRO
+    waitButton();
+    digitalWrite(LED_RED, LOW);
+    delay(2000);
+    barraSensores.leer_negro();
+    Serial.println("Negro calibrado");
+    digitalWrite(LED_RED, HIGH);
 
+    //Guardar en Preferences
+    preferences.putBytes("cal_blanco",
+                         barraSensores.sensorValores_B,
+                         sizeof(barraSensores.sensorValores_B));
+    preferences.putBytes("cal_negro",
+                         barraSensores.sensorValores_N,
+                         sizeof(barraSensores.sensorValores_N));
+    Serial.println("Calibración guardada en memoria");
+  }
+  else{
+    Serial.println("MODO NORMAL");
+
+    preferences.getBytes("cal_blanco",
+                         barraSensores.sensorValores_B,
+                         sizeof(barraSensores.sensorValores_B));
+    preferences.getBytes("cal_negro",
+                         barraSensores.sensorValores_N,
+                         sizeof(barraSensores.sensorValores_N));
+    Serial.println("Calibración cargada");
+  }
   waitButton();  // Presionar botón
 
-  digitalWrite(LED_RED, LOW);
-  delay(2000);
-  barraSensores.leer_negro();  // Poner sensores en negro
-  Serial.println("Lectura de negro correctas");
-  digitalWrite(LED_RED, HIGH);
-
-  waitButton();  // Presionar botón
-
-  barraSensores.Calcula_muestras();  // Calcular las muestras
+  barraSensores.Calcula_muestras();  
 
 #ifndef DEBUG
   waitGo();  // Control de arranque
@@ -262,6 +302,7 @@ void waitGo() {
   }
 }
 
+
 // Esperar por el botón
 void waitButton() {
   while (digitalRead(BUTTON)) {
@@ -271,6 +312,42 @@ void waitButton() {
     delay(100);
   }
 }
+
+// /* Cálculo de pid y control de motores */
+// void pid() {
+//   uint16_t input = barraSensores.Leer_Sensores_Linea(0);
+
+//   float error = input - SETPOINT;
+
+// #ifndef DEBUG
+//   if (error >= SETPOINT) {
+//     puenteH.motores(BRAKE_SPEED, -BRAKE_SPEED);
+//   } else if (error <= -SETPOINT) {
+//     puenteH.motores(-BRAKE_SPEED, BRAKE_SPEED);
+//   }
+// #endif
+
+//   error6 = error5;
+//   error5 = error4;
+//   error4 = error3;
+//   error3 = error2;
+//   error2 = error1;
+//   error1 = error;
+//   integral = ki * (error6 + error5 + error4 + error3 + error2 + error1 + error);
+
+//   integral = constrain(integral, min_speed, max_speed);
+
+//   float derivative = kd * (error - last_error);
+//   last_error = error;
+
+//   float diff = (kp * error) + integral + derivative;
+
+//   left_motor_speed = constrain(max_speed + diff, min_speed, max_speed);
+//   right_motor_speed = constrain(max_speed - diff, min_speed, max_speed);
+
+// #ifndef DEBUG
+//   (diff >= 0) ? puenteH.motores(max_speed, right_motor_speed) : puenteH.motores(left_motor_speed, max_speed);
+// #endif
 
 /* Cálculo de pid y control de motores */
 void pid() {
@@ -301,11 +378,18 @@ void pid() {
 
   float diff = (kp * error) + integral + derivative;
 
-  left_motor_speed = constrain(max_speed + diff, min_speed, max_speed);
-  right_motor_speed = constrain(max_speed - diff, min_speed, max_speed);
+  //Codigo de velocidad Adaptativa
+  float desviacion=constrain(abs(error)/SETPOINT, 0.0, 1.0);
+  float speed_factor=1.0-(0.5*desviacion);
+  int vel_adaptativa=(int)(max_speed*speed_factor);
+
+  // vel_adaptativa es la base, diff corrige la dirección
+  left_motor_speed = constrain(vel_adaptativa + diff, min_speed, max_speed);
+  right_motor_speed = constrain(vel_adaptativa - diff, min_speed, max_speed);
 
 #ifndef DEBUG
-  (diff >= 0) ? puenteH.motores(max_speed, right_motor_speed) : puenteH.motores(left_motor_speed, max_speed);
+  (diff >= 0) ? puenteH.motores(vel_adaptativa, right_motor_speed) 
+              : puenteH.motores(left_motor_speed, vel_adaptativa);
 #endif
 
 #ifdef DEBUG
@@ -315,8 +399,12 @@ void pid() {
   Serial.print(diff);
   Serial.print(", ls: ");
   Serial.print(left_motor_speed);
+  Serial.print(", v_Adap: ");
+  Serial.print(vel_adaptativa);
   Serial.print(", rs: ");
   Serial.print(right_motor_speed);
+  Serial.print(", v_Adap: ");
+  Serial.print(vel_adaptativa);
   Serial.print(", kp: ");
   Serial.print(kp);
   Serial.print(", ki: ");
