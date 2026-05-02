@@ -399,7 +399,7 @@ void pid() {
   Serial.print(diff);
   Serial.print(", ls: ");
   Serial.print(left_motor_speed);
-  Serial.print(", v_Adap: ");
+  Serial.print(", V_Adap: ");
   Serial.print(vel_adaptativa);
   Serial.print(", rs: ");
   Serial.print(right_motor_speed);
